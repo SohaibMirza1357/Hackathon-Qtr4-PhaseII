@@ -1,4 +1,4 @@
-# Claude Code Rules
+﻿# Claude Code Rules
 
 This file is generated during init for the selected agent.
 
@@ -205,6 +205,105 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 - `history/prompts/` — Prompt History Records
 - `history/adr/` — Architecture Decision Records
 - `.specify/` — SpecKit Plus templates and scripts
+
+## Project Overview
+
+**Objective:** Transform the console app into a modern multi-user web application with persistent storage using the Agentic Dev Stack workflow (Write spec → Generate plan → Break into tasks → Implement via Claude Code). No manual coding allowed.
+
+### Technology Stack
+
+| Layer          | Technology                      |
+|----------------|--------------------------------|
+| Frontend       | Next.js 16+ (App Router)       |
+| Backend        | Python FastAPI                  |
+| ORM            | SQLModel                        |
+| Database       | Neon Serverless PostgreSQL      |
+| Spec-Driven    | Claude Code + Spec-Kit Plus     |
+| Authentication | Better Auth                     |
+
+### Requirements
+
+- Implement all 5 Basic Level features as a web application
+- Create RESTful API endpoints
+- Build responsive frontend interface
+- Store data in Neon Serverless PostgreSQL database
+- Authentication: Implement user signup/signin using Better Auth
+
+### Authentication Flow (Better Auth + JWT)
+
+Better Auth is configured to issue JWT tokens when users log in. These tokens are self-contained credentials that include user information and can be verified by any service that knows the secret key.
+
+**How It Works:**
+1. User logs in on Frontend → Better Auth creates a session and issues a JWT token
+2. Frontend makes API call → Includes the JWT token in the `Authorization: Bearer <token>` header
+3. Backend receives request → Extracts token from header, verifies signature using shared secret
+4. Backend identifies user → Decodes token to get user ID, email, etc. and matches it with the user ID in the URL
+5. Backend filters data → Returns only tasks belonging to that user
+
+## Agent Delegation Rules
+
+You MUST delegate work to the appropriate specialized agent based on the domain of the task. Use the `Task` tool with the correct `subagent_type` to invoke each agent.
+
+### Auth Agent (`auth-security`)
+**Use for:** All authentication and security-related tasks.
+- Better Auth integration and configuration
+- User signup/signin flows
+- JWT token issuance, validation, and verification
+- Session management
+- Password hashing and credential handling
+- Security headers, CORS, CSRF protection
+- Rate limiting on auth endpoints
+- Securing API endpoints with authentication guards
+- Shared secret configuration between frontend (Better Auth) and backend (FastAPI)
+
+### Frontend Agent (`nextjs-ui-generator`)
+**Use for:** All frontend UI and Next.js development.
+- Next.js 16+ App Router pages, layouts, and components
+- Responsive frontend interface design
+- Forms (login, signup, task creation, etc.)
+- Client/Server Component patterns
+- Route setup with loading and error states
+- API client integration (attaching JWT tokens to requests)
+- UI state management
+- Accessible, mobile-first design
+
+### DB Agent (`neon-postgres-ops`)
+**Use for:** All database design and operations.
+- Neon Serverless PostgreSQL schema design
+- Table creation with proper indexes
+- Database migrations and rollback strategies
+- Query optimization
+- Connection pooling and serverless connection management
+- Data model relationships (users, tasks, etc.)
+- SQL query debugging and performance tuning
+
+### Backend Agent (`fastapi-backend`)
+**Use for:** All FastAPI backend development.
+- FastAPI endpoint creation and modification
+- SQLModel ORM model definitions
+- RESTful API design (CRUD operations)
+- Request/response schema validation with Pydantic
+- JWT token verification middleware (verifying tokens issued by Better Auth)
+- User-scoped data filtering (return only data belonging to authenticated user)
+- Error handling and logging
+- API versioning
+
+### Agent Coordination Rules
+
+1. **Authentication tasks** → Always delegate to `auth-security` agent first
+2. **Frontend pages/components** → Delegate to `nextjs-ui-generator` agent
+3. **Database schema/queries** → Delegate to `neon-postgres-ops` agent
+4. **API endpoints/backend logic** → Delegate to `fastapi-backend` agent
+5. **Cross-cutting tasks** → Break into sub-tasks and delegate each part to the appropriate agent
+6. **Security review** → Proactively invoke `auth-security` agent when any code handles credentials, tokens, or user data
+
+### Implementation Order (Recommended)
+
+When implementing features end-to-end, follow this order:
+1. **DB Agent** → Design and create database tables/schema
+2. **Auth Agent** → Set up Better Auth, configure JWT, secure endpoints
+3. **Backend Agent** → Build FastAPI endpoints with SQLModel, add JWT verification
+4. **Frontend Agent** → Build Next.js UI pages that consume the API
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
