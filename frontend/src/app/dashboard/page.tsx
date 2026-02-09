@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from '@/lib/auth-client';
 import { apiFetch } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,10 @@ function trimToMax(value: string, max: number): string {
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
+  // ------ Session (for user_id in API URLs) ------
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+
   // ------ Task list state ------
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTasks, setLoadingTasks] = useState<boolean>(true);
@@ -64,10 +69,11 @@ export default function DashboardPage() {
   // ---------------------------------------------------------------------------
 
   const fetchTasks = useCallback(async () => {
+    if (!userId) return;
     setLoadingTasks(true);
     setFetchError(null);
     try {
-      const res = await apiFetch('/api/tasks/');
+      const res = await apiFetch(`/api/${userId}/tasks`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setFetchError(data?.detail || 'Failed to load tasks.');
@@ -80,7 +86,7 @@ export default function DashboardPage() {
     } finally {
       setLoadingTasks(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchTasks();
@@ -102,7 +108,7 @@ export default function DashboardPage() {
 
     setCreateSubmitting(true);
     try {
-      const res = await apiFetch('/api/tasks/', {
+      const res = await apiFetch(`/api/${userId}/tasks`, {
         method: 'POST',
         body: JSON.stringify({
           title,
@@ -161,7 +167,7 @@ export default function DashboardPage() {
 
     setEditSubmitting(true);
     try {
-      const res = await apiFetch(`/api/tasks/${id}`, {
+      const res = await apiFetch(`/api/${userId}/tasks/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
           title,
@@ -199,7 +205,7 @@ export default function DashboardPage() {
     setTogglingIds((prev) => new Set(prev).add(id));
 
     try {
-      const res = await apiFetch(`/api/tasks/${id}/toggle`, {
+      const res = await apiFetch(`/api/${userId}/tasks/${id}/complete`, {
         method: 'PATCH',
       });
 
@@ -243,7 +249,7 @@ export default function DashboardPage() {
 
     setDeletingIds((prev) => new Set(prev).add(id));
     try {
-      const res = await apiFetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/${userId}/tasks/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setTasks((prev) => prev.filter((t) => t.id !== id));
       }
